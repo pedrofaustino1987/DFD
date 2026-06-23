@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordena el Diagrama de Flujo</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; max-width: 600px; margin: auto; }
+        h1, h2 { text-align: center; color: #333; }
+        
+        .pantalla { display: none; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .pantalla.activa { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn { border: none; padding: 10px 15px; margin: 5px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .btn:hover { filter: brightness(90%); transform: translateY(-1px); }
+        .btn-principal { background: #007BFF; color: white; }
+        .btn-exito { background: #28a745; color: white; }
+        .btn-gris { background: #6c757d; color: white; }
+        .btn-bloque { display: block; width: 100%; padding: 15px; font-size: 16px; margin-bottom: 10px; }
+
+        .paso-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #fafafa; margin: 12px 0; padding: 15px; border-radius: 5px; border: 1px solid #ddd; 
+            transition: all 0.3s;
+        }
+        .paso-text { flex-grow: 1; margin: 0 15px; text-align: left; font-size: 15px; }
+        .btn-mover { background: #ddd; border: none; padding: 8px 12px; cursor: pointer; border-radius: 3px; font-size: 16px; font-weight: bold;}
+        .btn-mover:hover:not(:disabled) { background: #bbb; }
+        .btn-mover:disabled { background: #f0f0f0; color: #ccc; cursor: not-allowed; }
+        
+        .correcto { background: #d4edda !important; border-left: 5px solid #28a745; }
+        .incorrecto { background: #f8d7da !important; border-left: 5px solid #dc3545; }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA MENÚ PRINCIPAL -->
+    <div id="pantalla-menu" class="pantalla activa">
+        <h1>🗂️ Ordena el Flujo</h1>
+        <h2>Elige un proceso para ordenar</h2>
+        <div id="botones-procesos">
+            <!-- Se generan con JavaScript -->
+        </div>
+    </div>
+
+    <!-- PANTALLA DEL JUEGO -->
+    <div id="pantalla-juego" class="pantalla">
+        <div id="area-juego">
+            <!-- Se generan con JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // 1. BASE DE DATOS DE PROCESOS
+        const procesos = [
+            { 
+                id: 1, 
+                nombre: "Hacer un café", 
+                pasos: ["Encender la cafetera", "Poner filtro y café", "Llenar depósito de agua", "Poner la jarra", "Esperar a que termine", "Servir en taza"] 
+            },
+            { 
+                id: 2, 
+                nombre: "Envío de un paquete", 
+                pasos: ["Empaquetar el producto", "Pegar la etiqueta", "Llevar a correos", "Pesar el paquete", "Pagar el envío", "Obtener recibo"] 
+            },
+            { 
+                id: 3, 
+                nombre: "Comprar en línea", 
+                pasos: ["Entrar a la tienda online", "Buscar el producto", "Añadir al carrito", "Ir a la caja", "Ingresar datos de tarjeta", "Confirmar compra"] 
+            },
+            { 
+                id: 4, 
+                nombre: "Lavarse los dientes", 
+                pasos: ["Mojar el cepillo", "Aplicar pasta dental", "Cepillar dientes superiores", "Cepillar dientes inferiores", "Enjuagar la boca", "Lavar el cepillo"] 
+            }
+        ];
+
+        // 2. VARIABLES DEL JUEGO
+        let procesoActual = null;
+        let pasosOrdenadosPorUsuario = [];
+        let pasosCorrectos = [];
+
+        // 3. CONTROL DE PANTALLAS
+        function cambiarPantalla(idPantalla) {
+            document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+            document.getElementById(idPantalla).classList.add('activa');
+        }
+
+        // 4. GENERAR MENÚ INICIAL
+        function mostrarMenu() {
+            const contenedorProcesos = document.getElementById('botones-procesos');
+            contenedorProcesos.innerHTML = ''; // Limpiar por si volvemos atrás
+            
+            procesos.forEach(proceso => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-exito btn-bloque';
+                btn.innerText = proceso.nombre;
+                // Usamos addEventListener para evitar problemas como el del botón "Jugar"
+                btn.addEventListener('click', function() { 
+                    iniciarJuego(proceso.id); 
+                });
+                contenedorProcesos.appendChild(btn);
+            });
+
+            cambiarPantalla('pantalla-menu');
+        }
+
+        // 5. INICIAR JUEGO
+        function iniciarJuego(id) {
+            procesoActual = procesos.find(p => p.id === id);
+            pasosCorrectos = procesoActual.pasos;
+            pasosOrdenadosPorUsuario = mezclarArreglo(pasosCorrectos);
+            renderizarPasos();
+            cambiarPantalla('pantalla-juego');
+        }
+
+        // 6. MEZCLAR PASOS (Algoritmo Fisher-Yates)
+        function mezclarArreglo(arreglo) {
+            let arregloMezclado = [...arreglo];
+            for (let i = arregloMezclado.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arregloMezclado[i], arregloMezclado[j]] = [arregloMezclado[j], arregloMezclado[i]];
+            }
+            // Seguridad: si por azar sale ordenado, lo mezcla de nuevo
+            if (JSON.stringify(arregloMezclado) === JSON.stringify(arreglo)) {
+                return mezclarArreglo(arreglo);
+            }
+            return arregloMezclado;
+        }
+
+        // 7. DIBUJAR LOS PASOS EN PANTALLA
+        function renderizarPasos() {
+            const areaJuego = document.getElementById('area-juego');
+            areaJuego.innerHTML = '<h2>' + procesoActual.nombre + '</h2>';
+
+            pasosOrdenadosPorUsuario.forEach((paso, index) => {
+                const div = document.createElement('div');
+                div.className = 'paso-item';
+                div.id = 'paso-' + index;
+                
+                // Botón Subir
+                const btnArriba = document.createElement('button');
+                btnArriba.className = 'btn-mover';
+                btnArriba.innerText = '▲';
+                btnArriba.disabled = (index === 0); // Deshabilitado si es el primero
+                btnArriba.addEventListener('click', function() { moverPaso(index, -1); });
+
+                // Texto del paso
+                const texto = document.createElement('span');
+                texto.className = 'paso-text';
+                texto.innerHTML = '<strong>' + (index + 1) + '.</strong> ' + paso;
+
+                // Botón Bajar
+                const btnAbajo = document.createElement('button');
+                btnAbajo.className = 'btn-mover';
+                btnAbajo.innerText = '▼';
+                btnAbajo.disabled = (index === pasosOrdenadosPorUsuario.length - 1); // Deshabilitado si es el último
+                btnAbajo.addEventListener('click', function() { moverPaso(index, 1); });
+
+                // Juntar todo en el div
+                div.appendChild(btnArriba);
+                div.appendChild(texto);
+                div.appendChild(btnAbajo);
+                areaJuego.appendChild(div);
+            });
+
+            // Botón Verificar
+            const btnVerificar = document.createElement('button');
+            btnVerificar.className = 'btn btn-principal btn-bloque';
+            btnVerificar.style.marginTop = '20px';
+            btnVerificar.innerText = '✅ Verificar Orden';
+            btnVerificar.addEventListener('click', verificarOrden);
+            areaJuego.appendChild(btnVerificar);
+
+            // Botón Volver
+            const btnVolver = document.createElement('button');
+            btnVolver.className = 'btn btn-gris btn-bloque';
+            btnVolver.style.marginTop = '5px';
+            btnVolver.innerText = '← Volver al menú';
+            btnVolver.addEventListener('click', mostrarMenu);
+            areaJuego.appendChild(btnVolver);
+        }
+
+        // 8. MOVER PASOS (Intercambiar posiciones)
+        function moverPaso(index, direccion) {
+            const nuevoIndex = index + direccion;
+            if (nuevoIndex < 0 || nuevoIndex >= pasosOrdenadosPorUsuario.length) return;
+
+            // Intercambio lógico
+            [pasosOrdenadosPorUsuario[index], pasosOrdenadosPorUsuario[nuevoIndex]] = 
+            [pasosOrdenadosPorUsuario[nuevoIndex], pasosOrdenadosPorUsuario[index]];
+
+            // Redibujar pantalla para actualizar números y botones habilitados/deshabilitados
+            renderizarPasos(); 
+        }
+
+        // 9. VERIFICAR SI GANÓ
+        function verificarOrden() {
+            let esCorrecto = true;
+
+            pasosOrdenadosPorUsuario.forEach((paso, index) => {
+                const divPaso = document.getElementById('paso-' + index);
+                divPaso.classList.remove('correcto', 'incorrecto'); // Limpia colores previos
+
+                if (paso === pasosCorrectos[index]) {
+                    divPaso.classList.add('correcto');
+                } else {
+                    divPaso.classList.add('incorrecto');
+                    esCorrecto = false;
+                }
+            });
+
+            if (esCorrecto) {
+                setTimeout(() => alert("¡Perfecto! Ordenaste el diagrama correctamente."), 200);
+            } else {
+                alert("Algunos pasos están mal.\n\n🟢 Verde = Bien.\n🔴 Rojo = Mal.\n¡Sigue intentando!");
+            }
+        }
+
+        // 10. ARRANCAR EL JUEGO
+        mostrarMenu();
+
+    </script>
+</body>
+</html>
