@@ -31,73 +31,119 @@
         
         .correcto { background: #d4edda !important; border-left: 5px solid #28a745; }
         .incorrecto { background: #f8d7da !important; border-left: 5px solid #dc3545; }
+
+        /* --- ESTILOS DEL BOTÓN DE MÚSICA --- */
+        #btn-musica {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #333;
+            color: white;
+            font-size: 24px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+        #btn-musica:hover { background: #555; transform: scale(1.1); }
     </style>
 </head>
 <body>
+
+    <!-- Botón flotante de Música -->
+    <button id="btn-musica" title="Prender/Apagar Música">🔇</button>
 
     <!-- PANTALLA MENÚ PRINCIPAL -->
     <div id="pantalla-menu" class="pantalla activa">
         <h1>🗂️ Ordena el Flujo</h1>
         <h2>Elige un proceso para ordenar</h2>
-        <div id="botones-procesos">
-            <!-- Se generan con JavaScript -->
-        </div>
+        <div id="botones-procesos"></div>
     </div>
 
     <!-- PANTALLA DEL JUEGO -->
     <div id="pantalla-juego" class="pantalla">
-        <div id="area-juego">
-            <!-- Se generan con JavaScript -->
-        </div>
+        <div id="area-juego"></div>
     </div>
 
     <script>
-        // 1. BASE DE DATOS DE PROCESOS
-        const procesos = [
-            { 
-                id: 1, 
-                nombre: "Hacer un café", 
-                pasos: ["Encender la cafetera", "Poner filtro y café", "Llenar depósito de agua", "Poner la jarra", "Esperar a que termine", "Servir en taza"] 
-            },
-            { 
-                id: 2, 
-                nombre: "Envío de un paquete", 
-                pasos: ["Empaquetar el producto", "Pegar la etiqueta", "Llevar a correos", "Pesar el paquete", "Pagar el envío", "Obtener recibo"] 
-            },
-            { 
-                id: 3, 
-                nombre: "Comprar en línea", 
-                pasos: ["Entrar a la tienda online", "Buscar el producto", "Añadir al carrito", "Ir a la caja", "Ingresar datos de tarjeta", "Confirmar compra"] 
-            },
-            { 
-                id: 4, 
-                nombre: "Lavarse los dientes", 
-                pasos: ["Mojar el cepillo", "Aplicar pasta dental", "Cepillar dientes superiores", "Cepillar dientes inferiores", "Enjuagar la boca", "Lavar el cepillo"] 
+        // ==========================================
+        // 1. CONFIGURACIÓN DE MÚSICA
+        // ==========================================
+        // Carga el archivo musica.mp3 que debes poner en la misma carpeta
+        const audioMusica = new Audio('alexgrohl-motivation-epic-rock-111444.mp3');
+        audioMusica.loop = true; // Para que se repita infinitamente
+        audioMusica.volume = 0.4; // Volumen al 40%
+        
+        let musicaReproducida = false;
+        let estaMutado = false;
+
+        const btnMusica = document.getElementById('btn-musica');
+        
+        // Función para prender la música (se ejecuta al hacer el primer clic)
+        function intentarIniciarMusica() {
+            if (!musicaReproducida) {
+                audioMusica.play().then(() => {
+                    musicaReproducida = true;
+                    estaMutado = false;
+                    btnMusica.innerText = '🔊';
+                }).catch(error => {
+                    console.log("Error al cargar la música: Asegúrate de que el archivo 'musica.mp3' esté en la misma carpeta.", error);
+                });
             }
+        }
+
+        // Función del botón mutear/desmutear
+        btnMusica.addEventListener('click', function() {
+            if (estaMutado) {
+                audioMusica.volume = 0.4;
+                estaMutado = false;
+                btnMusica.innerText = '🔊';
+            } else {
+                audioMusica.volume = 0;
+                estaMutado = true;
+                btnMusica.innerText = '🔇';
+            }
+        });
+
+        // ==========================================
+        // 2. BASE DE DATOS DE PROCESOS
+        // ==========================================
+        const procesos = [
+            { id: 1, nombre: "Hacer un café", pasos: ["Encender la cafetera", "Poner filtro y café", "Llenar depósito de agua", "Poner la jarra", "Esperar a que termine", "Servir en taza"] },
+            { id: 2, nombre: "Envío de un paquete", pasos: ["Empaquetar el producto", "Pegar la etiqueta", "Llevar a correos", "Pesar el paquete", "Pagar el envío", "Obtener recibo"] },
+            { id: 3, nombre: "Comprar en línea", pasos: ["Entrar a la tienda online", "Buscar el producto", "Añadir al carrito", "Ir a la caja", "Ingresar datos de tarjeta", "Confirmar compra"] },
+            { id: 4, nombre: "Lavarse los dientes", pasos: ["Mojar el cepillo", "Aplicar pasta dental", "Cepillar dientes superiores", "Cepillar dientes inferiores", "Enjuagar la boca", "Lavar el cepillo"] }
         ];
 
-        // 2. VARIABLES DEL JUEGO
+        // 3. VARIABLES DEL JUEGO
         let procesoActual = null;
         let pasosOrdenadosPorUsuario = [];
         let pasosCorrectos = [];
 
-        // 3. CONTROL DE PANTALLAS
+        // 4. CONTROL DE PANTALLAS
         function cambiarPantalla(idPantalla) {
             document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
             document.getElementById(idPantalla).classList.add('activa');
         }
 
-        // 4. GENERAR MENÚ INICIAL
+        // 5. GENERAR MENÚ INICIAL
         function mostrarMenu() {
             const contenedorProcesos = document.getElementById('botones-procesos');
-            contenedorProcesos.innerHTML = ''; // Limpiar por si volvemos atrás
+            contenedorProcesos.innerHTML = ''; 
             
             procesos.forEach(proceso => {
                 const btn = document.createElement('button');
                 btn.className = 'btn btn-exito btn-bloque';
                 btn.innerText = proceso.nombre;
-                // Usamos addEventListener para evitar problemas como el del botón "Jugar"
                 btn.addEventListener('click', function() { 
+                    intentarIniciarMusica(); // <--- AQUÍ EMPIEZA LA MÚSICA
                     iniciarJuego(proceso.id); 
                 });
                 contenedorProcesos.appendChild(btn);
@@ -106,7 +152,7 @@
             cambiarPantalla('pantalla-menu');
         }
 
-        // 5. INICIAR JUEGO
+        // 6. INICIAR JUEGO
         function iniciarJuego(id) {
             procesoActual = procesos.find(p => p.id === id);
             pasosCorrectos = procesoActual.pasos;
@@ -115,21 +161,18 @@
             cambiarPantalla('pantalla-juego');
         }
 
-        // 6. MEZCLAR PASOS (Algoritmo Fisher-Yates)
+        // 7. MEZCLAR PASOS
         function mezclarArreglo(arreglo) {
             let arregloMezclado = [...arreglo];
             for (let i = arregloMezclado.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [arregloMezclado[i], arregloMezclado[j]] = [arregloMezclado[j], arregloMezclado[i]];
             }
-            // Seguridad: si por azar sale ordenado, lo mezcla de nuevo
-            if (JSON.stringify(arregloMezclado) === JSON.stringify(arreglo)) {
-                return mezclarArreglo(arreglo);
-            }
+            if (JSON.stringify(arregloMezclado) === JSON.stringify(arreglo)) return mezclarArreglo(arreglo);
             return arregloMezclado;
         }
 
-        // 7. DIBUJAR LOS PASOS EN PANTALLA
+        // 8. DIBUJAR LOS PASOS
         function renderizarPasos() {
             const areaJuego = document.getElementById('area-juego');
             areaJuego.innerHTML = '<h2>' + procesoActual.nombre + '</h2>';
@@ -139,33 +182,28 @@
                 div.className = 'paso-item';
                 div.id = 'paso-' + index;
                 
-                // Botón Subir
                 const btnArriba = document.createElement('button');
                 btnArriba.className = 'btn-mover';
                 btnArriba.innerText = '▲';
-                btnArriba.disabled = (index === 0); // Deshabilitado si es el primero
+                btnArriba.disabled = (index === 0);
                 btnArriba.addEventListener('click', function() { moverPaso(index, -1); });
 
-                // Texto del paso
                 const texto = document.createElement('span');
                 texto.className = 'paso-text';
                 texto.innerHTML = '<strong>' + (index + 1) + '.</strong> ' + paso;
 
-                // Botón Bajar
                 const btnAbajo = document.createElement('button');
                 btnAbajo.className = 'btn-mover';
                 btnAbajo.innerText = '▼';
-                btnAbajo.disabled = (index === pasosOrdenadosPorUsuario.length - 1); // Deshabilitado si es el último
+                btnAbajo.disabled = (index === pasosOrdenadosPorUsuario.length - 1);
                 btnAbajo.addEventListener('click', function() { moverPaso(index, 1); });
 
-                // Juntar todo en el div
                 div.appendChild(btnArriba);
                 div.appendChild(texto);
                 div.appendChild(btnAbajo);
                 areaJuego.appendChild(div);
             });
 
-            // Botón Verificar
             const btnVerificar = document.createElement('button');
             btnVerificar.className = 'btn btn-principal btn-bloque';
             btnVerificar.style.marginTop = '20px';
@@ -173,7 +211,6 @@
             btnVerificar.addEventListener('click', verificarOrden);
             areaJuego.appendChild(btnVerificar);
 
-            // Botón Volver
             const btnVolver = document.createElement('button');
             btnVolver.className = 'btn btn-gris btn-bloque';
             btnVolver.style.marginTop = '5px';
@@ -182,27 +219,20 @@
             areaJuego.appendChild(btnVolver);
         }
 
-        // 8. MOVER PASOS (Intercambiar posiciones)
+        // 9. MOVER PASOS
         function moverPaso(index, direccion) {
             const nuevoIndex = index + direccion;
             if (nuevoIndex < 0 || nuevoIndex >= pasosOrdenadosPorUsuario.length) return;
-
-            // Intercambio lógico
-            [pasosOrdenadosPorUsuario[index], pasosOrdenadosPorUsuario[nuevoIndex]] = 
-            [pasosOrdenadosPorUsuario[nuevoIndex], pasosOrdenadosPorUsuario[index]];
-
-            // Redibujar pantalla para actualizar números y botones habilitados/deshabilitados
+            [pasosOrdenadosPorUsuario[index], pasosOrdenadosPorUsuario[nuevoIndex]] = [pasosOrdenadosPorUsuario[nuevoIndex], pasosOrdenadosPorUsuario[index]];
             renderizarPasos(); 
         }
 
-        // 9. VERIFICAR SI GANÓ
+        // 10. VERIFICAR SI GANÓ
         function verificarOrden() {
             let esCorrecto = true;
-
             pasosOrdenadosPorUsuario.forEach((paso, index) => {
                 const divPaso = document.getElementById('paso-' + index);
-                divPaso.classList.remove('correcto', 'incorrecto'); // Limpia colores previos
-
+                divPaso.classList.remove('correcto', 'incorrecto');
                 if (paso === pasosCorrectos[index]) {
                     divPaso.classList.add('correcto');
                 } else {
@@ -218,9 +248,8 @@
             }
         }
 
-        // 10. ARRANCAR EL JUEGO
+        // ARRANCAR
         mostrarMenu();
-
     </script>
 </body>
 </html>
